@@ -199,14 +199,6 @@ st.markdown("""
         white-space: nowrap;
     }
 
-    /* Responsive adjustments */
-    @media (max-width: 1200px) {
-        [data-testid="stSidebar"] {
-            min-width: 160px;
-            max-width: 180px;
-        }
-    }
-
     /* Ensure metric values don't wrap */
     [data-testid="stMetricValue"] {
         white-space: nowrap;
@@ -216,6 +208,52 @@ st.markdown("""
     .stButton button {
         padding: 0.25rem 0.5rem;
         font-size: 0.85rem;
+    }
+
+    /* ===== MOBILE RESPONSIVE ===== */
+    @media (max-width: 768px) {
+        /* Make main content full width */
+        .main .block-container {
+            padding-left: 1rem;
+            padding-right: 1rem;
+            max-width: 100%;
+        }
+
+        /* Allow horizontal scroll for schedule grid */
+        [data-testid="stHorizontalBlock"] {
+            overflow-x: auto;
+            flex-wrap: nowrap !important;
+        }
+
+        /* Minimum width for day columns on mobile */
+        [data-testid="column"] {
+            min-width: 60px;
+            flex-shrink: 0;
+        }
+
+        /* Stack form elements better on mobile */
+        .stSelectbox, .stCheckbox {
+            margin-bottom: 0.25rem;
+        }
+
+        /* Smaller text on mobile */
+        .stMarkdown {
+            font-size: 0.9rem;
+        }
+
+        /* Compact buttons on mobile */
+        .stButton button {
+            padding: 0.2rem 0.4rem;
+            font-size: 0.8rem;
+        }
+    }
+
+    /* Tablet adjustments */
+    @media (max-width: 1200px) {
+        [data-testid="stSidebar"] {
+            min-width: 160px;
+            max-width: 180px;
+        }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -373,8 +411,9 @@ def schedule_page():
     def format_emp_option(emp_id):
         emp = next((e for e in employees if e['id'] == emp_id), None)
         if emp:
-            status = "[ ]" if emp_id in [e['id'] for e in unscheduled_employees] else "[done]"
-            return f"{status} {emp['name']}"
+            is_unscheduled = emp_id in [e['id'] for e in unscheduled_employees]
+            status = "NEEDS SCHEDULING" if is_unscheduled else "scheduled"
+            return f"{emp['name']} ({status})"
         return str(emp_id)
 
     selected_emp_id = st.selectbox(
