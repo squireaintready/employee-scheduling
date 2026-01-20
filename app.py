@@ -181,9 +181,10 @@ st.markdown("""
         padding-top: 0;
     }
 
-    /* Hide Streamlit header/hamburger menu for cleaner look */
+    /* Make Streamlit header minimal but keep hamburger menu visible */
     header[data-testid="stHeader"] {
-        display: none;
+        background: transparent;
+        height: 2.5rem;
     }
 
     /* Narrow sidebar - wide enough for "Shift Templates" */
