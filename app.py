@@ -7,59 +7,38 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta, date
 from typing import List, Dict
-import hashlib
 import hmac
 
 import database as db
 import payroll as pr
 
 
-def hash_password(password: str) -> str:
-    """Hash a password using SHA-256."""
-    return hashlib.sha256(password.encode()).hexdigest()
-
-
-def check_auth():
-    """Email/password authentication."""
+def check_password():
+    """Simple password authentication."""
 
     # Already authenticated
     if st.session_state.get("authenticated"):
         return True
 
-    # Get users from secrets
+    # Get password from secrets
     try:
-        users = st.secrets["users"]
+        correct_password = st.secrets["password"]
     except Exception:
-        st.error("Authentication not configured. Add users to Streamlit secrets.")
-        st.code('''
-# Add to Streamlit Cloud Secrets:
-[users]
-[users.admin]
-email = "admin@company.com"
-password_hash = "your_sha256_hash"
-        ''')
+        st.error("Password not configured. Add to Streamlit secrets.")
+        st.code('password = "your-password-here"')
         return False
 
     # Show login form
     st.title("Employee Scheduling & Payroll")
-    st.subheader("Login")
 
-    email = st.text_input("Email", key="login_email")
     password = st.text_input("Password", type="password", key="login_password")
 
     if st.button("Login", type="primary"):
-        # Check credentials
-        for username, user_data in users.items():
-            if user_data.get("email", "").lower() == email.lower():
-                if hmac.compare_digest(hash_password(password), user_data.get("password_hash", "")):
-                    st.session_state["authenticated"] = True
-                    st.session_state["user_email"] = email
-                    st.rerun()
-                else:
-                    st.error("Incorrect password")
-                    return False
-        st.error("Email not found")
-        return False
+        if hmac.compare_digest(password, correct_password):
+            st.session_state["authenticated"] = True
+            st.rerun()
+        else:
+            st.error("Incorrect password")
 
     return False
 
@@ -244,7 +223,7 @@ st.markdown("""
 
 def main():
     # Check authentication first
-    if not check_auth():
+    if not check_password():
         return
 
     st.title("Employee Scheduling & Payroll")
@@ -257,10 +236,8 @@ def main():
 
     # Logout button in sidebar
     st.sidebar.divider()
-    st.sidebar.caption(f"Logged in as: {st.session_state.get('user_email', 'Unknown')}")
     if st.sidebar.button("Logout"):
         st.session_state["authenticated"] = False
-        st.session_state.pop("user_email", None)
         st.rerun()
 
     if page == "Schedule":
