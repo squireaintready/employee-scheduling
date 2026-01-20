@@ -307,36 +307,80 @@ def schedule_page():
     day_names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
     day_names_short = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
 
-    # Overview grid (read-only)
-    st.divider()
-    header_cols = st.columns([1.8] + [1] * 7)
-    header_cols[0].write("**Employee**")
-    for i, d in enumerate(week_dates):
-        header_cols[i + 1].write(f"**{day_names_short[i]}** {d.day}")
+    # Categorize employees by scheduling status
+    def employee_has_shifts(emp_id):
+        return any(shift_lookup.get((emp_id, d.isoformat())) for d in week_dates)
 
-    for emp in employees:
-        cols = st.columns([1.8] + [1] * 7)
-        with cols[0]:
-            st.write(f"**{emp['name']}**")
+    scheduled_employees = [e for e in employees if employee_has_shifts(e['id'])]
+    unscheduled_employees = [e for e in employees if not employee_has_shifts(e['id'])]
+
+    # Progress indicator
+    total = len(employees)
+    done = len(scheduled_employees)
+    st.divider()
+
+    if unscheduled_employees:
+        st.progress(done / total if total > 0 else 0)
+        st.markdown(f"**Progress: {done}/{total} employees scheduled** — {len(unscheduled_employees)} remaining")
+    else:
+        st.success(f"All {total} employees scheduled for this week!")
+
+    # Needs Scheduling section (always visible at top if any)
+    if unscheduled_employees:
+        st.markdown("### Needs Scheduling")
+        header_cols = st.columns([1.8] + [1] * 7)
+        header_cols[0].write("**Employee**")
         for i, d in enumerate(week_dates):
-            date_str = d.isoformat()
-            shift = shift_lookup.get((emp['id'], date_str))
-            with cols[i + 1]:
-                if shift:
-                    st.caption(format_time_12h(shift['start_time']))
-                else:
+            header_cols[i + 1].write(f"**{day_names_short[i]}** {d.day}")
+
+        for emp in unscheduled_employees:
+            cols = st.columns([1.8] + [1] * 7)
+            with cols[0]:
+                st.markdown(f":orange[**{emp['name']}**]")
+            for i, d in enumerate(week_dates):
+                with cols[i + 1]:
                     st.caption("—")
+
+    # Scheduled section
+    if scheduled_employees:
+        st.markdown("### Scheduled")
+        header_cols = st.columns([1.8] + [1] * 7)
+        header_cols[0].write("**Employee**")
+        for i, d in enumerate(week_dates):
+            header_cols[i + 1].write(f"**{day_names_short[i]}** {d.day}")
+
+        for emp in scheduled_employees:
+            cols = st.columns([1.8] + [1] * 7)
+            with cols[0]:
+                st.markdown(f":green[**{emp['name']}**]")
+            for i, d in enumerate(week_dates):
+                date_str = d.isoformat()
+                shift = shift_lookup.get((emp['id'], date_str))
+                with cols[i + 1]:
+                    if shift:
+                        st.caption(format_time_12h(shift['start_time']))
+                    else:
+                        st.caption("—")
 
     st.divider()
 
     # Employee selector for editing
     st.subheader("Edit Hours")
 
-    emp_options = {emp['id']: emp['name'] for emp in employees}
+    # Sort: unscheduled first, then scheduled
+    sorted_employees = unscheduled_employees + scheduled_employees
+
+    def format_emp_option(emp_id):
+        emp = next((e for e in employees if e['id'] == emp_id), None)
+        if emp:
+            status = "[ ]" if emp_id in [e['id'] for e in unscheduled_employees] else "[done]"
+            return f"{status} {emp['name']}"
+        return str(emp_id)
+
     selected_emp_id = st.selectbox(
         "Select Employee",
-        options=list(emp_options.keys()),
-        format_func=lambda x: emp_options[x],
+        options=[e['id'] for e in sorted_employees],
+        format_func=format_emp_option,
         key="edit_employee_select"
     )
 
