@@ -5,7 +5,8 @@ Streamlit-based GUI for managing schedules and calculating payroll.
 
 import streamlit as st
 import pandas as pd
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, timezone
+from zoneinfo import ZoneInfo
 from typing import List, Dict
 import hmac
 
@@ -407,7 +408,10 @@ def schedule_page():
         if last_mod:
             try:
                 dt = datetime.fromisoformat(last_mod)
-                return dt.strftime("%b %d, %I:%M%p").lower()
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                dt_est = dt.astimezone(ZoneInfo("America/New_York"))
+                return dt_est.strftime("%b %d, %I:%M%p").lower()
             except:
                 return None
         return None
