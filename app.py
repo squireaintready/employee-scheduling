@@ -170,6 +170,16 @@ st.set_page_config(
 # Custom CSS for better layout
 st.markdown("""
 <style>
+    /* Reduce top padding to bring content closer to top */
+    .main .block-container {
+        padding-top: 1rem;
+    }
+
+    /* Hide Streamlit header/hamburger menu for cleaner look */
+    header[data-testid="stHeader"] {
+        display: none;
+    }
+
     /* Narrow sidebar - wide enough for "Shift Templates" */
     [data-testid="stSidebar"] {
         min-width: 180px;
