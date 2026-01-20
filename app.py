@@ -170,9 +170,15 @@ st.set_page_config(
 # Custom CSS for better layout
 st.markdown("""
 <style>
-    /* Reduce top padding to bring content closer to top */
+    /* Remove top padding to bring content to very top */
     .main .block-container {
-        padding-top: 1rem;
+        padding-top: 0;
+        margin-top: 0;
+    }
+
+    /* Remove any extra spacing at top */
+    .main > div:first-child {
+        padding-top: 0;
     }
 
     /* Hide Streamlit header/hamburger menu for cleaner look */
