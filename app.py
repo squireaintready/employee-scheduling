@@ -411,9 +411,17 @@ def schedule_page():
     def format_emp_option(emp_id):
         emp = next((e for e in employees if e['id'] == emp_id), None)
         if emp:
-            is_unscheduled = emp_id in [e['id'] for e in unscheduled_employees]
-            status = "NEEDS SCHEDULING" if is_unscheduled else "scheduled"
-            return f"{emp['name']} ({status})"
+            # Get days this employee is working
+            day_abbrevs = ['M', 'T', 'W', 'Th', 'F', 'Sa', 'Su']
+            working_days = []
+            for i, d in enumerate(week_dates):
+                if shift_lookup.get((emp_id, d.isoformat())):
+                    working_days.append(day_abbrevs[i])
+
+            if working_days:
+                return f"{emp['name']} [{', '.join(working_days)}]"
+            else:
+                return f"{emp['name']} [no shifts]"
         return str(emp_id)
 
     selected_emp_id = st.selectbox(
