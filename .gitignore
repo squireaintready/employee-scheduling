@@ -4,3 +4,4 @@ __pycache__/
 scheduling.db
 *.db
 .env
+.streamlit/secrets.toml
