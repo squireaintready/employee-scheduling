@@ -225,7 +225,11 @@ st.markdown("""
     /* Compact buttons */
     .stButton button {
         padding: 0.25rem 0.5rem;
-        font-size: 0.85rem;
+        font-size: 0.75rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
     }
 
     /* ===== MOBILE RESPONSIVE ===== */
@@ -539,9 +543,10 @@ def schedule_page():
                 for i in range(7):
                     st.session_state[f"sel_day_{i}"] = False
 
-            # Template buttons row
+            # Template buttons row - compact buttons with padding on right
             num_btns = len(templates) + 1
-            btn_cols = st.columns(num_btns + 1)
+            btn_widths = [0.4] * num_btns + [3]  # Small fixed widths + padding
+            btn_cols = st.columns(btn_widths)
             for t_idx, tmpl in enumerate(templates):
                 with btn_cols[t_idx]:
                     if st.button(tmpl['name'], key=f"fill_tmpl_{tmpl['id']}", use_container_width=True):
@@ -568,7 +573,7 @@ def schedule_page():
                     st.rerun()
 
             # Day checkboxes + All/None buttons in one row
-            day_cols = st.columns([1, 1, 1, 1, 1, 1, 1, 0.2, 0.6, 0.6])
+            day_cols = st.columns([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.1, 0.4, 0.4, 3])
             for i in range(7):
                 with day_cols[i]:
                     st.checkbox(day_names_short[i], key=f"sel_day_{i}")
