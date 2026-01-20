@@ -214,8 +214,8 @@ st.markdown("""
     @media (max-width: 768px) {
         /* Make main content full width */
         .main .block-container {
-            padding-left: 1rem;
-            padding-right: 1rem;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
             max-width: 100%;
         }
 
@@ -223,12 +223,19 @@ st.markdown("""
         [data-testid="stHorizontalBlock"] {
             overflow-x: auto;
             flex-wrap: nowrap !important;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 0.5rem;
         }
 
         /* Minimum width for day columns on mobile */
         [data-testid="column"] {
-            min-width: 60px;
+            min-width: 55px;
             flex-shrink: 0;
+        }
+
+        /* Employee name column wider on mobile */
+        [data-testid="column"]:first-child {
+            min-width: 90px;
         }
 
         /* Stack form elements better on mobile */
@@ -238,21 +245,50 @@ st.markdown("""
 
         /* Smaller text on mobile */
         .stMarkdown {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
-        /* Compact buttons on mobile */
+        .stMarkdown h3 {
+            font-size: 1.1rem;
+        }
+
+        /* Smaller captions on mobile */
+        .stCaption {
+            font-size: 0.65rem;
+        }
+
+        /* Touch-friendly buttons on mobile */
         .stButton button {
-            padding: 0.2rem 0.4rem;
+            padding: 0.4rem 0.6rem;
             font-size: 0.8rem;
+            min-height: 38px;
+        }
+
+        /* Touch-friendly checkboxes */
+        .stCheckbox {
+            padding: 0.25rem 0;
+        }
+
+        /* Compact progress bar */
+        .stProgress {
+            margin: 0.25rem 0;
+        }
+
+        /* Hide sidebar by default on mobile (user can open) */
+        [data-testid="stSidebar"][aria-expanded="true"] {
+            min-width: 200px;
         }
     }
 
     /* Tablet adjustments */
-    @media (max-width: 1200px) {
+    @media (max-width: 1200px) and (min-width: 769px) {
         [data-testid="stSidebar"] {
             min-width: 160px;
             max-width: 180px;
+        }
+
+        [data-testid="column"] {
+            min-width: 70px;
         }
     }
 </style>
@@ -349,6 +385,16 @@ def schedule_page():
     def employee_has_shifts(emp_id):
         return any(shift_lookup.get((emp_id, d.isoformat())) for d in week_dates)
 
+    def get_last_modified(emp_id):
+        last_mod = db.get_last_modified_for_employee(emp_id, week_start.isoformat(), week_end.isoformat())
+        if last_mod:
+            try:
+                dt = datetime.fromisoformat(last_mod)
+                return dt.strftime("%b %d, %I:%M%p").lower()
+            except:
+                return None
+        return None
+
     scheduled_employees = [e for e in employees if employee_has_shifts(e['id'])]
     unscheduled_employees = [e for e in employees if not employee_has_shifts(e['id'])]
 
@@ -390,7 +436,10 @@ def schedule_page():
         for emp in scheduled_employees:
             cols = st.columns([1.8] + [1] * 7)
             with cols[0]:
+                last_mod = get_last_modified(emp['id'])
                 st.markdown(f":green[**{emp['name']}**]")
+                if last_mod:
+                    st.caption(f"updated {last_mod}")
             for i, d in enumerate(week_dates):
                 date_str = d.isoformat()
                 shift = shift_lookup.get((emp['id'], date_str))

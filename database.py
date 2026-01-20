@@ -84,6 +84,12 @@ def init_database():
             except sqlite3.OperationalError:
                 pass
 
+        # Migration: Add last_modified column to shifts
+        try:
+            cursor.execute("ALTER TABLE shifts ADD COLUMN last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+        except sqlite3.OperationalError:
+            pass
+
         # Settings table for app configuration
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS settings (
@@ -261,10 +267,10 @@ def add_shift(employee_id: int, shift_date: str, start_time: str,
     with get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO shifts (employee_id, shift_date, start_time, end_time, lunch_start, lunch_end, template_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO shifts (employee_id, shift_date, start_time, end_time, lunch_start, lunch_end, template_id, last_modified)
+            VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ON CONFLICT(employee_id, shift_date)
-            DO UPDATE SET start_time = ?, end_time = ?, lunch_start = ?, lunch_end = ?, template_id = ?
+            DO UPDATE SET start_time = ?, end_time = ?, lunch_start = ?, lunch_end = ?, template_id = ?, last_modified = CURRENT_TIMESTAMP
         """, (employee_id, shift_date, start_time, end_time, lunch_start, lunch_end, template_id,
               start_time, end_time, lunch_start, lunch_end, template_id))
         return cursor.lastrowid
@@ -296,6 +302,18 @@ def get_shifts_for_employee(employee_id: int, start_date: str, end_date: str) ->
             ORDER BY shift_date
         """, (employee_id, start_date, end_date))
         return [dict(row) for row in cursor.fetchall()]
+
+
+def get_last_modified_for_employee(employee_id: int, start_date: str, end_date: str) -> Optional[str]:
+    """Get the most recent modification time for an employee's shifts in a date range."""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT MAX(last_modified) as last_mod FROM shifts
+            WHERE employee_id = ? AND shift_date BETWEEN ? AND ?
+        """, (employee_id, start_date, end_date))
+        row = cursor.fetchone()
+        return row['last_mod'] if row and row['last_mod'] else None
 
 
 def delete_shift(employee_id: int, shift_date: str) -> bool:
